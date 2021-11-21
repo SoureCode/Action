@@ -11,6 +11,7 @@
 namespace SoureCode\Component\Action;
 
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
  * @author Jason Schilling <jason@sourecode.dev>
@@ -44,13 +45,19 @@ class Job implements JobInterface
             $outputKey = $taskDefinition->getOutputKey();
             $input = $inputKey ? $this->storage->get($inputKey) : null;
 
-            $taskOutput = $task->execute($input);
+            try {
+                $taskOutput = $task->execute($input);
 
-            if (null !== $outputKey) {
-                if ('console' === $outputKey) {
-                    $output->write($taskOutput);
-                } else {
-                    $this->storage->set($outputKey, $taskOutput);
+                if (null !== $outputKey) {
+                    if ('console' === $outputKey) {
+                        $output->write($taskOutput);
+                    } else {
+                        $this->storage->set($outputKey, $taskOutput);
+                    }
+                }
+            } catch (ProcessFailedException $exception) {
+                if (!$taskDefinition->continueOnError()) {
+                    throw $exception;
                 }
             }
         }

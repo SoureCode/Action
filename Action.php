@@ -11,6 +11,7 @@
 namespace SoureCode\Component\Action;
 
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
  * @author Jason Schilling <jason@sourecode.dev>
@@ -33,6 +34,13 @@ class Action implements ActionInterface
         $this->jobDefinitions = $jobDefinitions;
     }
 
+    public function execute(OutputInterface $output): void
+    {
+        $jobNames = $this->getDependencyResolver()->resolve();
+
+        $this->executeJobs($output, $jobNames);
+    }
+
     private function getDependencyResolver(): DependencyResolver
     {
         $dependencyResolver = new DependencyResolver();
@@ -44,11 +52,20 @@ class Action implements ActionInterface
         return $dependencyResolver;
     }
 
-    public function execute(OutputInterface $output): void
+    private function executeJobs(OutputInterface $output, array $jobNames): void
     {
-        $jobNames = $this->getDependencyResolver()->resolve();
+        foreach ($jobNames as $name) {
+            $jobDefinition = $this->jobDefinitions[$name];
+            $job = $this->jobFactory->fromDefinition($jobDefinition);
 
-        $this->executeJobs($output, $jobNames);
+            try {
+                $job->execute($output);
+            } catch (ProcessFailedException $exception) {
+                if (!$jobDefinition->continueOnError()) {
+                    throw $exception;
+                }
+            }
+        }
     }
 
     public function executeJob(OutputInterface $output, string $name): void
@@ -56,14 +73,5 @@ class Action implements ActionInterface
         $jobNames = $this->getDependencyResolver()->resolveSingle($name);
 
         $this->executeJobs($output, $jobNames);
-    }
-
-    private function executeJobs(OutputInterface $output, array $jobNames): void
-    {
-        foreach ($jobNames as $name) {
-            $job = $this->jobFactory->fromDefinition($this->jobDefinitions[$name]);
-
-            $job->execute($output);
-        }
     }
 }
