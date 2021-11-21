@@ -39,7 +39,7 @@ class JobDefinitionTest extends TestCase
         $jobDefinition->setDependencies(['bar']);
         $jobDefinition->setContinueOnError(false);
         $jobDefinition->setTasks([
-            $taskDefinition,
+            'bar' => $taskDefinition,
         ]);
         $jobDefinition->addTask($taskDefinitionFoo);
 
@@ -47,8 +47,8 @@ class JobDefinitionTest extends TestCase
         $this->assertEquals(['bar'], $jobDefinition->getDependencies());
         $this->assertFalse($jobDefinition->continueOnError());
         $this->assertEquals([
-            $taskDefinition,
-            $taskDefinitionFoo,
+            'bar' => $taskDefinition,
+            'foo' => $taskDefinitionFoo,
         ], $jobDefinition->getTasks());
     }
 }

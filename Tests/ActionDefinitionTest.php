@@ -26,11 +26,11 @@ class ActionDefinitionTest extends TestCase
 
         $actionDefinition = new ActionDefinition('foo');
         $actionDefinition->setDependencies(['bar']);
-        $actionDefinition->setJobs([$jobDefinition]);
+        $actionDefinition->setJobs(['foo' => $jobDefinition]);
         $actionDefinition->addJob($jobDefinition1);
 
         $this->assertEquals('foo', $actionDefinition->getName());
         $this->assertEquals(['bar'], $actionDefinition->getDependencies());
-        $this->assertEquals([$jobDefinition, $jobDefinition1], $actionDefinition->getJobs());
+        $this->assertEquals(['foo' => $jobDefinition, 'bar' => $jobDefinition1], $actionDefinition->getJobs());
     }
 }

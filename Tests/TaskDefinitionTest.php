@@ -20,7 +20,7 @@ class TaskDefinitionTest extends TestCase
 {
     public function testGetterAndSetter(): void
     {
-        $taskDefinition = new TaskDefinition('test', 'test');
+        $taskDefinition = new TaskDefinition('test', 'ls');
 
         $taskDefinition->setContinueOnError(true);
         $taskDefinition->setInputKey('foo');
