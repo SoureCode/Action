@@ -58,7 +58,7 @@ class Task implements TaskInterface
     {
         if (!$this->process) {
             $this->process = Process::fromShellCommandline(
-                $this->command,
+                'exec '.$this->command,
                 $this->directory,
                 ['APP_ENV' => false, 'SYMFONY_DOTENV_VARS' => false],
             );
