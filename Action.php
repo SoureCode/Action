@@ -10,8 +10,9 @@
 
 namespace SoureCode\Component\Action;
 
+use Symfony\Component\Console\Output\ConsoleOutput;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\Exception\ProcessFailedException;
+use Throwable;
 
 /**
  * @author Jason Schilling <jason@sourecode.dev>
@@ -54,13 +55,14 @@ class Action implements ActionInterface
 
     private function executeJobs(OutputInterface $output, array $jobNames): void
     {
-        foreach ($jobNames as $name) {
-            $jobDefinition = $this->jobDefinitions[$name];
+        foreach ($jobNames as $jobName) {
+            $section = $output instanceof ConsoleOutput ? $output->section() : $output;
+            $jobDefinition = $this->jobDefinitions[$jobName];
             $job = $this->jobFactory->fromDefinition($jobDefinition);
 
             try {
                 $job->execute($output);
-            } catch (ProcessFailedException $exception) {
+            } catch (Throwable $exception) {
                 if (!$jobDefinition->continueOnError()) {
                     throw $exception;
                 }

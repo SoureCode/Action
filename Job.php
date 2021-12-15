@@ -10,8 +10,11 @@
 
 namespace SoureCode\Component\Action;
 
+use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Output\ConsoleOutput;
+use Symfony\Component\Console\Output\ConsoleSectionOutput;
 use Symfony\Component\Console\Output\OutputInterface;
-use Symfony\Component\Process\Exception\ProcessFailedException;
+use Throwable;
 
 /**
  * @author Jason Schilling <jason@sourecode.dev>
@@ -40,22 +43,62 @@ class Job implements JobInterface
     public function execute(OutputInterface $output): void
     {
         foreach ($this->taskDefinitions as $taskDefinition) {
+            $section = $output instanceof ConsoleOutput ? $output->section() : $output;
             $task = $this->taskFactory->fromDefinition($taskDefinition);
             $inputKey = $taskDefinition->getInputKey();
             $outputKey = $taskDefinition->getOutputKey();
             $input = $inputKey ? $this->storage->get($inputKey) : null;
+            $taskName = $taskDefinition->getName();
+
+            $section->writeln(sprintf(' ➤ Executing task <info>%s</info>', $taskName));
+
+            if ($section->isVeryVerbose()) {
+                $section->writeln(sprintf(' - InputKey: <info>%s</info>', $inputKey ?? '-'));
+                $section->writeln(sprintf(' - OutputKey: <info>%s</info>', $outputKey ?? '-'));
+                $section->writeln(sprintf(' - Input: <info>%s</info>', json_encode($input, \JSON_THROW_ON_ERROR)));
+            }
 
             try {
-                $taskOutput = $task->execute($input);
+                $taskOutput = new BufferedOutput();
+
+                $task->execute(function (string $data) use ($taskOutput, $section) {
+                    $taskOutput->write($data);
+
+                    if ($section instanceof ConsoleSectionOutput) {
+                        /** @var ConsoleSectionOutput $section */
+                        $bufferedData = $taskOutput->fetch();
+
+                        $section->overwrite($bufferedData);
+                        $taskOutput->write($bufferedData);
+                    } else {
+                        $section->write($data);
+                    }
+                }, $input);
 
                 if (null !== $outputKey) {
-                    if ('console' === $outputKey) {
-                        $output->write($taskOutput);
-                    } else {
-                        $this->storage->set($outputKey, $taskOutput);
-                    }
+                    $this->storage->set($outputKey, $taskOutput->fetch());
                 }
-            } catch (ProcessFailedException $exception) {
+
+                $message = sprintf(' <fg=green>✔</> Task <info>%s</info> executed', $taskName);
+
+                if ($section instanceof ConsoleSectionOutput) {
+                    $section->overwrite($message);
+                } else {
+                    $section->writeln($message);
+                }
+            } catch (Throwable $exception) {
+                if (!$taskDefinition->continueOnError()) {
+                    $message = sprintf('<error> ✘ Task <fg=green;bg=red>%s</> failed</error>', $taskName);
+                } else {
+                    $message = sprintf('<gf=yellow> ● Task <info>%s</info> failed</>', $taskName);
+                }
+
+                if ($section instanceof ConsoleSectionOutput) {
+                    $section->overwrite($message);
+                } else {
+                    $section->writeln($message);
+                }
+
                 if (!$taskDefinition->continueOnError()) {
                     throw $exception;
                 }

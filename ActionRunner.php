@@ -58,17 +58,25 @@ class ActionRunner
         return $dependencyResolver;
     }
 
-    private function executeActions(OutputInterface $output, array $jobNames, string $name, ?string $job = null): void
-    {
-        foreach ($jobNames as $jobName) {
-            $definition = $this->actions->get($jobName);
+    private function executeActions(
+        OutputInterface $output,
+        array $actionNames,
+        string $name,
+        ?string $job = null
+    ): void {
+        foreach ($actionNames as $actionName) {
+            $definition = $this->actions->get($actionName);
             $action = $this->actionFactory->fromDefinition($definition);
 
-            if ($jobName === $name && null !== $job) {
+            if ($actionName === $name && null !== $job) {
                 $action->executeJob($output, $job);
             } else {
                 $action->execute($output);
             }
+
+            $message = sprintf(' <fg=green>✔</> Action <info>%s</info> executed', $actionName);
+
+            $output->writeln($message);
         }
     }
 }

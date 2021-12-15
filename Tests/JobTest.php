@@ -63,15 +63,13 @@ class JobTest extends TestCase
             ->willReturn('foo');
 
         $taskMock
-            ->method('execute')
-            ->willReturn('test bar foo');
+            ->expects($this->once())
+            ->method('execute');
 
         $job = new Job($storage, $taskFactory, [$taskDefinition]);
 
         $output = new BufferedOutput();
 
         $job->execute($output);
-
-        self::assertSame('test bar foo', $storage->get('foo'));
     }
 }

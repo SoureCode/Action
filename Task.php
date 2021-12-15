@@ -10,8 +10,6 @@
 
 namespace SoureCode\Component\Action;
 
-use Symfony\Component\Console\Output\BufferedOutput;
-use Symfony\Component\Process\Exception\ProcessFailedException;
 use Symfony\Component\Process\Process;
 
 /**
@@ -33,32 +31,22 @@ class Task implements TaskInterface
         $this->directory = $directory;
     }
 
-    public function execute(?string $input = null): string
+    public function execute(?callable $callback = null, ?string $input = null): void
     {
         $process = $this->getProcess();
         $process->setInput($input);
-        $process->start();
-
-        $output = new BufferedOutput();
-
-        foreach ($process as $data) {
-            $output->write($data);
-        }
-
-        $exitCode = $process->wait();
-
-        if (0 !== $exitCode) {
-            throw new ProcessFailedException($process);
-        }
-
-        return $output->fetch();
+        $process->mustRun(
+            null !== $callback ? static function (string $type, string $data) use ($callback) {
+                $callback($data, $type);
+            } : null
+        );
     }
 
     public function getProcess(): Process
     {
         if (!$this->process) {
             $this->process = Process::fromShellCommandline(
-                'exec '.$this->command,
+                $this->command,
                 $this->directory,
                 ['APP_ENV' => false, 'SYMFONY_DOTENV_VARS' => false],
             );

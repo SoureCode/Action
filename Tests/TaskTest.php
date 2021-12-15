@@ -12,6 +12,7 @@ namespace SoureCode\Component\Action\Tests;
 
 use PHPUnit\Framework\TestCase;
 use SoureCode\Component\Action\Task;
+use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
@@ -22,10 +23,13 @@ class TaskTest extends TestCase
     public function testExecute(): void
     {
         $task = new Task('ls', __DIR__);
+        $buffer = new BufferedOutput();
 
-        $output = $task->execute();
+        $task->execute(function ($data) use ($buffer) {
+            $buffer->write($data);
+        });
 
-        $this->assertStringContainsString(basename(__FILE__), $output);
+        $this->assertStringContainsString(basename(__FILE__), $buffer->fetch());
     }
 
     public function testGetterAndConstructor(): void
@@ -39,12 +43,17 @@ class TaskTest extends TestCase
     public function testPipe(): void
     {
         $task = new Task('ls | grep Task', __DIR__);
+        $buffer = new BufferedOutput();
 
-        $output = $task->execute();
+        $task->execute(function ($data) use ($buffer) {
+            $buffer->write($data);
+        });
 
-        $this->assertStringContainsString(basename(__FILE__), $output);
-        $this->assertStringContainsString('TaskDefinitionTest.php', $output);
-        $this->assertStringNotContainsString('DependencyResolverTest.php', $output);
+        $data = $buffer->fetch();
+
+        $this->assertStringContainsString(basename(__FILE__), $data);
+        $this->assertStringContainsString('TaskDefinitionTest.php', $data);
+        $this->assertStringNotContainsString('DependencyResolverTest.php', $data);
     }
 
     public function testFailedTest(): void
