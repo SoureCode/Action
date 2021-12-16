@@ -16,6 +16,7 @@ use SoureCode\Component\Action\JobFactory;
 use SoureCode\Component\Action\MemoryStorage;
 use SoureCode\Component\Action\TaskDefinition;
 use SoureCode\Component\Action\TaskFactory;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * @author Jason Schilling <jason@sourecode.dev>
@@ -24,21 +25,22 @@ class JobFactoryTest extends TestCase
 {
     public function testFromDefinition(): void
     {
-        $taskFactory = new TaskFactory();
+        $filesystem = new Filesystem();
+        $taskFactory = new TaskFactory($filesystem);
         $storage = new MemoryStorage();
         $jobFactory = new JobFactory($storage, $taskFactory);
 
         $taskDefinition = new TaskDefinition('bar', 'ls');
 
         $taskDefinition->setContinueOnError(true);
-        $taskDefinition->setInputKey('foo');
+        $taskDefinition->setInputKeys(['foo']);
         $taskDefinition->setOutputKey('bar');
         $taskDefinition->setDirectory('/tmp');
 
         $taskDefinitionFoo = new TaskDefinition('foo', 'ls');
 
         $taskDefinitionFoo->setContinueOnError(true);
-        $taskDefinitionFoo->setInputKey('foo');
+        $taskDefinitionFoo->setInputKeys(['foo']);
         $taskDefinitionFoo->setOutputKey('bar');
         $taskDefinitionFoo->setDirectory('/tmp');
 

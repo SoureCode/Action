@@ -10,6 +10,7 @@
 
 namespace SoureCode\Component\Action;
 
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Process;
 
 /**
@@ -21,38 +22,73 @@ class Task implements TaskInterface
 
     private string $directory;
 
+    private Filesystem $filesystem;
+
     private ?Process $process = null;
 
     public function __construct(
+        Filesystem $filesystem,
         string $command,
         string $directory,
     ) {
+        $this->filesystem = $filesystem;
         $this->command = $command;
         $this->directory = $directory;
     }
 
-    public function execute(?callable $callback = null, ?string $input = null): void
+    /**
+     * {@inheritDoc}
+     */
+    public function execute(?callable $callback = null, array $inputs = []): void
     {
-        $process = $this->getProcess();
-        $process->setInput($input);
-        $process->mustRun(
-            null !== $callback ? static function (string $type, string $data) use ($callback) {
-                $callback($data, $type);
-            } : null
-        );
+        $file = $this->createTemporaryFile($inputs);
+
+        try {
+            $environment = ['APP_ENV' => false, 'SYMFONY_DOTENV_VARS' => false];
+            $command = 'bash --noprofile --norc -e -o pipefail '.$file;
+
+            $process = Process::fromShellCommandline($command, $this->directory, $environment);
+
+            $process->mustRun(
+                null !== $callback ? static function (string $type, string $data) use ($callback) {
+                    $callback($data, $type);
+                } : null
+            );
+        } finally {
+            $this->filesystem->remove($file);
+        }
     }
 
-    public function getProcess(): Process
+    /**
+     * @param array<string, string> $inputs
+     */
+    private function createTemporaryFile(array $inputs = []): string
     {
-        if (!$this->process) {
-            $this->process = Process::fromShellCommandline(
-                $this->command,
-                $this->directory,
-                ['APP_ENV' => false, 'SYMFONY_DOTENV_VARS' => false],
-            );
+        $temporaryDirectory = realpath(sys_get_temp_dir());
+        $temporaryFile = tempnam($temporaryDirectory, 'sourecode-action').'.sh';
+
+        if (!$temporaryFile) {
+            throw new \RuntimeException(sprintf('Could not create temporary file in "%s"', $temporaryDirectory));
         }
 
-        return $this->process;
+        $stub = "#!/usr/bin/env bash\n\n";
+        $stub .= "set -e\n\n";
+
+        if (!empty($inputs)) {
+            foreach ($inputs as $key => $value) {
+                $stub .= sprintf('export INPUT_%s="%s"', strtoupper($key), $value);
+            }
+
+            $stub .= "\n\n";
+        }
+
+        $stub .= $this->command;
+        $stub .= "\n"; // EOF
+
+        $this->filesystem->dumpFile($temporaryFile, $stub);
+        $this->filesystem->chmod($temporaryFile, 0755);
+
+        return $temporaryFile;
     }
 
     public function getCommand(): string

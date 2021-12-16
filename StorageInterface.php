@@ -15,7 +15,11 @@ namespace SoureCode\Component\Action;
  */
 interface StorageInterface
 {
+    public function clear(): void;
+
     public function get(string $key): ?string;
 
     public function set(string $key, string $value): void;
+
+    public function has(string $key): bool;
 }

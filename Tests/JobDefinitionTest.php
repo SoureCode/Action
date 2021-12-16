@@ -24,14 +24,14 @@ class JobDefinitionTest extends TestCase
         $taskDefinition = new TaskDefinition('bar', 'ls');
 
         $taskDefinition->setContinueOnError(true);
-        $taskDefinition->setInputKey('foo');
+        $taskDefinition->setInputKeys(['foo']);
         $taskDefinition->setOutputKey('bar');
         $taskDefinition->setDirectory('/tmp');
 
         $taskDefinitionFoo = new TaskDefinition('foo', 'ls');
 
         $taskDefinitionFoo->setContinueOnError(true);
-        $taskDefinitionFoo->setInputKey('foo');
+        $taskDefinitionFoo->setInputKeys(['foo']);
         $taskDefinitionFoo->setOutputKey('bar');
         $taskDefinitionFoo->setDirectory('/tmp');
 

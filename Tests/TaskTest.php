@@ -13,6 +13,7 @@ namespace SoureCode\Component\Action\Tests;
 use PHPUnit\Framework\TestCase;
 use SoureCode\Component\Action\Task;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Filesystem\Filesystem;
 use Symfony\Component\Process\Exception\ProcessFailedException;
 
 /**
@@ -22,7 +23,8 @@ class TaskTest extends TestCase
 {
     public function testExecute(): void
     {
-        $task = new Task('ls', __DIR__);
+        $filesystem = new Filesystem();
+        $task = new Task($filesystem, 'ls', __DIR__);
         $buffer = new BufferedOutput();
 
         $task->execute(function ($data) use ($buffer) {
@@ -34,7 +36,8 @@ class TaskTest extends TestCase
 
     public function testGetterAndConstructor(): void
     {
-        $task = new Task('ls -lar', '/tmp');
+        $filesystem = new Filesystem();
+        $task = new Task($filesystem, 'ls -lar', '/tmp');
 
         $this->assertEquals('ls -lar', $task->getCommand());
         $this->assertEquals('/tmp', $task->getDirectory());
@@ -42,7 +45,8 @@ class TaskTest extends TestCase
 
     public function testPipe(): void
     {
-        $task = new Task('ls | grep Task', __DIR__);
+        $filesystem = new Filesystem();
+        $task = new Task($filesystem, 'ls | grep Task', __DIR__);
         $buffer = new BufferedOutput();
 
         $task->execute(function ($data) use ($buffer) {
@@ -58,9 +62,10 @@ class TaskTest extends TestCase
 
     public function testFailedTest(): void
     {
+        $filesystem = new Filesystem();
         $this->expectException(ProcessFailedException::class);
 
-        $task = new Task('ls -ö', __DIR__);
+        $task = new Task($filesystem, 'ls -ö', __DIR__);
 
         $task->execute();
     }

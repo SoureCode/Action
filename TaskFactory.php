@@ -10,14 +10,24 @@
 
 namespace SoureCode\Component\Action;
 
+use Symfony\Component\Filesystem\Filesystem;
+
 /**
  * @author Jason Schilling <jason@sourecode.dev>
  */
 class TaskFactory
 {
+    private Filesystem $filesystem;
+
+    public function __construct(Filesystem $filesystem)
+    {
+        $this->filesystem = $filesystem;
+    }
+
     public function fromDefinition(TaskDefinition $definition): TaskInterface
     {
         return new Task(
+            $this->filesystem,
             $definition->getCommand(),
             $definition->getDirectory(),
         );

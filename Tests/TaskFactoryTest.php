@@ -13,6 +13,7 @@ namespace SoureCode\Component\Action\Tests;
 use PHPUnit\Framework\TestCase;
 use SoureCode\Component\Action\TaskDefinition;
 use SoureCode\Component\Action\TaskFactory;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * @author Jason Schilling <jason@sourecode.dev>
@@ -21,12 +22,13 @@ class TaskFactoryTest extends TestCase
 {
     public function testFromDefinition(): void
     {
-        $taskFactory = new TaskFactory();
+        $filesystem = new Filesystem();
+        $taskFactory = new TaskFactory($filesystem);
 
         $taskDefinition = new TaskDefinition('bar', 'ls');
 
         $taskDefinition->setContinueOnError(true);
-        $taskDefinition->setInputKey('foo');
+        $taskDefinition->setInputKeys(['foo']);
         $taskDefinition->setOutputKey('bar');
         $taskDefinition->setDirectory('/tmp');
 

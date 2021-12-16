@@ -45,17 +45,29 @@ class Job implements JobInterface
         foreach ($this->taskDefinitions as $taskDefinition) {
             $section = $output instanceof ConsoleOutput ? $output->section() : $output;
             $task = $this->taskFactory->fromDefinition($taskDefinition);
-            $inputKey = $taskDefinition->getInputKey();
+            $inputKeys = $taskDefinition->getInputKeys();
             $outputKey = $taskDefinition->getOutputKey();
-            $input = $inputKey ? $this->storage->get($inputKey) : null;
             $taskName = $taskDefinition->getName();
+            $inputs = [];
+
+            foreach ($inputKeys as $inputKey) {
+                $inputValue = $this->storage->get($inputKey);
+
+                if (null === $inputValue) {
+                    throw new \RuntimeException(sprintf('Missing input "%s" for task "%s"', $inputKey, $taskName));
+                }
+
+                $inputs[$inputKey] = $inputValue;
+            }
 
             $section->writeln(sprintf(' ➤ Executing task <info>%s</info>', $taskName));
 
             if ($section->isVeryVerbose()) {
-                $section->writeln(sprintf(' - InputKey: <info>%s</info>', $inputKey ?? '-'));
+                $section->writeln(
+                    sprintf(' - InputKeys: <info>%s</info>', !empty($inputKeys) ? implode(', ', $inputKeys) : '-')
+                );
                 $section->writeln(sprintf(' - OutputKey: <info>%s</info>', $outputKey ?? '-'));
-                $section->writeln(sprintf(' - Input: <info>%s</info>', json_encode($input, \JSON_THROW_ON_ERROR)));
+                $section->writeln(sprintf(' - Inputs: <info>%s</info>', json_encode($inputs, \JSON_THROW_ON_ERROR)));
             }
 
             try {
@@ -73,7 +85,7 @@ class Job implements JobInterface
                     } else {
                         $section->write($data);
                     }
-                }, $input);
+                }, $inputs);
 
                 if (null !== $outputKey) {
                     $this->storage->set($outputKey, $taskOutput->fetch());
@@ -90,7 +102,7 @@ class Job implements JobInterface
                 if (!$taskDefinition->continueOnError()) {
                     $message = sprintf('<error> ✘ Task <fg=green;bg=red>%s</> failed</error>', $taskName);
                 } else {
-                    $message = sprintf('<gf=yellow> ● Task <info>%s</info> failed</>', $taskName);
+                    $message = sprintf('<fg=yellow> ● Task <info>%s</info> failed</>', $taskName);
                 }
 
                 if ($section instanceof ConsoleSectionOutput) {

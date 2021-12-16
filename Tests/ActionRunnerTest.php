@@ -21,6 +21,7 @@ use SoureCode\Component\Action\MemoryStorage;
 use SoureCode\Component\Action\TaskDefinition;
 use SoureCode\Component\Action\TaskFactory;
 use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Filesystem\Filesystem;
 
 class ActionRunnerTest extends TestCase
 {
@@ -84,17 +85,17 @@ class ActionRunnerTest extends TestCase
         $taskDefinition->setDirectory(__DIR__);
         $taskDefinition->setOutputKey('list');
 
-        $taskDefinition1 = new TaskDefinition('foofoobar', 'grep Task');
+        $taskDefinition1 = new TaskDefinition('foofoobar', 'echo "$INPUT_LIST" | grep Task');
         $taskDefinition1->setDirectory(__DIR__);
-        $taskDefinition1->setInputKey('list');
+        $taskDefinition1->setInputKeys(['list']);
         $taskDefinition1->setOutputKey('task_test_files');
 
         $jobDefinition = new JobDefinition('foofoo');
         $jobDefinition->setTasks(['foofoofoo' => $taskDefinition, 'foofoobar' => $taskDefinition1]);
 
-        $taskDefinition2 = new TaskDefinition('foobarfoo', "xargs -I {} -n 1 sh -c 'echo foo_{}'");
+        $taskDefinition2 = new TaskDefinition('foobarfoo', "echo \"\$INPUT_TASK_TEST_FILES\" | xargs -I {} -n 1 sh -c 'echo foo_{}'");
         $taskDefinition2->setDirectory(__DIR__);
-        $taskDefinition2->setInputKey('task_test_files');
+        $taskDefinition2->setInputKeys(['task_test_files']);
         $taskDefinition2->setOutputKey('task_test_files_prefixed');
 
         $jobDefinition1 = new JobDefinition('foobar');
@@ -112,8 +113,9 @@ class ActionRunnerTest extends TestCase
                 'bar' => $actionDefinition1,
             ]);
 
+        $filesystem = new Filesystem();
         $this->storage = new MemoryStorage();
-        $taskFactory = new TaskFactory();
+        $taskFactory = new TaskFactory($filesystem);
         $jobFactory = new JobFactory($this->storage, $taskFactory);
         $actionFactory = new ActionFactory($jobFactory);
 

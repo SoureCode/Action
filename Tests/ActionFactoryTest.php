@@ -17,6 +17,7 @@ use SoureCode\Component\Action\JobDefinition;
 use SoureCode\Component\Action\JobFactory;
 use SoureCode\Component\Action\MemoryStorage;
 use SoureCode\Component\Action\TaskFactory;
+use Symfony\Component\Filesystem\Filesystem;
 
 /**
  * @author Jason Schilling <jason@sourecode.dev>
@@ -25,8 +26,9 @@ class ActionFactoryTest extends TestCase
 {
     public function testFromDefinition(): void
     {
+        $filesystem = new Filesystem();
         $storage = new MemoryStorage();
-        $taskFactory = new TaskFactory();
+        $taskFactory = new TaskFactory($filesystem);
         $jobFactory = new JobFactory($storage, $taskFactory);
         $actionFactory = new ActionFactory($jobFactory);
 

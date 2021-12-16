@@ -15,5 +15,8 @@ namespace SoureCode\Component\Action;
  */
 interface TaskInterface
 {
-    public function execute(?callable $callback, ?string $input = null): void;
+    /**
+     * @param array<string, string> $inputs
+     */
+    public function execute(?callable $callback, array $inputs = []): void;
 }

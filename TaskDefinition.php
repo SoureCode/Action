@@ -21,7 +21,7 @@ class TaskDefinition
 
     private ?string $directory = null;
 
-    private ?string $inputKey = null;
+    private array $inputKeys = [];
 
     private string $name;
 
@@ -62,14 +62,14 @@ class TaskDefinition
         $this->directory = $directory;
     }
 
-    public function getInputKey(): ?string
+    public function getInputKeys(): array
     {
-        return $this->inputKey;
+        return $this->inputKeys;
     }
 
-    public function setInputKey(?string $inputKey): void
+    public function setInputKeys(array $inputKeys): void
     {
-        $this->inputKey = $inputKey;
+        $this->inputKeys = $inputKeys;
     }
 
     public function getName(): string

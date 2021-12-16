@@ -23,14 +23,14 @@ class TaskDefinitionTest extends TestCase
         $taskDefinition = new TaskDefinition('test', 'ls');
 
         $taskDefinition->setContinueOnError(true);
-        $taskDefinition->setInputKey('foo');
+        $taskDefinition->setInputKeys(['foo']);
         $taskDefinition->setOutputKey('bar');
         $taskDefinition->setDirectory('/tmp');
 
         $this->assertEquals('test', $taskDefinition->getName());
         $this->assertEquals('ls', $taskDefinition->getCommand());
         $this->assertTrue($taskDefinition->continueOnError());
-        $this->assertEquals('foo', $taskDefinition->getInputKey());
+        $this->assertEquals(['foo'], $taskDefinition->getInputKeys());
         $this->assertEquals('bar', $taskDefinition->getOutputKey());
         $this->assertEquals('/tmp', $taskDefinition->getDirectory());
     }
